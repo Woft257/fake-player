@@ -45,31 +45,55 @@ public class NameGenerator {
 
     public String generateRandomName() {
         int type = random.nextInt(3);
+        String raw;
         switch (type) {
             case 0:
-                return FIRST_NAMES[random.nextInt(FIRST_NAMES.length)] + LAST_NAMES[random.nextInt(LAST_NAMES.length)];
+                raw = FIRST_NAMES[random.nextInt(FIRST_NAMES.length)] + LAST_NAMES[random.nextInt(LAST_NAMES.length)];
+                break;
             case 1:
-                return PREFIXES[random.nextInt(PREFIXES.length)] + SUFFIXES[random.nextInt(SUFFIXES.length)];
+                raw = PREFIXES[random.nextInt(PREFIXES.length)] + SUFFIXES[random.nextInt(SUFFIXES.length)];
+                break;
             case 2:
-                return FIRST_NAMES[random.nextInt(FIRST_NAMES.length)] + random.nextInt(10000);
+                raw = FIRST_NAMES[random.nextInt(FIRST_NAMES.length)] + random.nextInt(10000);
+                break;
             default:
-                return "Player" + random.nextInt(100000);
+                raw = "Player" + random.nextInt(100000);
         }
+        return normalizeToMcName(raw);
     }
 
-    // Tạo tên đảm bảo không đụng vào tập reserved; cố gắng trong giới hạn attempts
+    // Ensure 3..16 chars and only [A-Za-z0-9_]
+    private String normalizeToMcName(String input) {
+        if (input == null) input = "Player" + random.nextInt(100000);
+        String sanitized = input.replaceAll("[^A-Za-z0-9_]", "");
+        if (sanitized.length() > 16) {
+            sanitized = sanitized.substring(0, 16);
+        }
+        if (sanitized.length() < 3) {
+            sanitized = (sanitized + "Player").substring(0, Math.min(16, (sanitized + "Player").length()));
+        }
+        // Avoid starting with a number (rare client quirks with some plugins)
+        if (sanitized.length() > 0 && Character.isDigit(sanitized.charAt(0))) {
+            sanitized = "P" + sanitized.substring(0, Math.min(15, sanitized.length()));
+        }
+        return sanitized;
+    }
+
+    // Unique name (case-insensitive) against reserved set
     public String generateUniqueName(Set<String> reservedLower) {
         if (reservedLower == null) reservedLower = new HashSet<>();
-        for (int i = 0; i < 200; i++) { // giới hạn để tránh vòng lặp vô hạn
+        for (int i = 0; i < 200; i++) { // bounded attempts
             String candidate = generateRandomName();
             if (!reservedLower.contains(candidate.toLowerCase())) return candidate;
         }
-        // fallback cuối cùng: thêm số nối đuôi đến khi không trùng
+        // fallback: base + numeric suffix while keeping <= 16
+        String base = normalizeToMcName("Player" + random.nextInt(100000));
         int suffix = 1;
-        String base = "Player" + random.nextInt(100000);
         String candidate = base;
         while (reservedLower.contains(candidate.toLowerCase())) {
-            candidate = base + (++suffix);
+            String suffixStr = String.valueOf(++suffix);
+            int keep = Math.max(3, 16 - suffixStr.length());
+            candidate = base.substring(0, Math.min(keep, base.length())) + suffixStr;
         }
         return candidate;
     }
