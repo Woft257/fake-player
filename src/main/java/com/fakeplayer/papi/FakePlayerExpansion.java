@@ -4,9 +4,8 @@ import com.fakeplayer.FakePlayerPlugin;
 import com.fakeplayer.core.FakeManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class FakePlayerExpansion extends PlaceholderExpansion {
     private final FakeManager manager;
@@ -44,11 +43,7 @@ public class FakePlayerExpansion extends PlaceholderExpansion {
     }
 
     @Override
-    public @Nullable String onRequest(@Nullable Player player, @NotNull String params) {
-        // Supported placeholders:
-        // %fakeplayer_total% -> real + fake
-        // %fakeplayer_real%  -> real online players
-        // %fakeplayer_fake%  -> fake players count
+    public String onRequest(OfflinePlayer player, @NotNull String params) {
         switch (params.toLowerCase()) {
             case "total":
                 return String.valueOf(Bukkit.getOnlinePlayers().size() + manager.getFakePlayerCount());
@@ -57,7 +52,7 @@ public class FakePlayerExpansion extends PlaceholderExpansion {
             case "fake":
                 return String.valueOf(manager.getFakePlayerCount());
             default:
-                return null; // unknown placeholder
+                return null;
         }
     }
 }
