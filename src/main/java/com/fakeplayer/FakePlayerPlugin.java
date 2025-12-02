@@ -31,10 +31,10 @@ public class FakePlayerPlugin extends JavaPlugin implements Listener {
         instance = this;
         saveDefaultConfig();
 
-        // Yêu cầu ProtocolLib để thêm player vào tab list
+        // Require ProtocolLib to inject players into the tab list
         Plugin protocolLib = Bukkit.getPluginManager().getPlugin("ProtocolLib");
         if (protocolLib == null || !protocolLib.isEnabled()) {
-            getLogger().severe("ProtocolLib chưa được cài đặt! Vui lòng cài ProtocolLib để FakePlayer hoạt động.");
+            getLogger().severe("ProtocolLib is not installed or not enabled. Please install ProtocolLib to use FakePlayer.");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
@@ -73,7 +73,9 @@ public class FakePlayerPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
-        // Nothing special for now
+        if (tabUi != null) {
+            tabUi.clearViewer(e.getPlayer().getUniqueId());
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 name: FakePlayer
 version: 1.0.0
 main: com.fakeplayer.FakePlayerPlugin
-description: Plugin fake player cho Minecraft Paper 1.18.2
+description: Fake players for Minecraft Paper 1.18.2
 authors:
   - YourName
 api-version: 1.18
@@ -9,7 +9,14 @@ softdepend: [ProtocolLib]
 
 commands:
   fakeplayer:
-    description: Quản lý fake player
+    description: Manage fake players
     usage: /fakeplayer <add|remove|list|clear|reload>
     aliases: [fp]
+    permission: fakeplayer.admin
+    permission-message: "You don't have permission to use this command."
+
+permissions:
+  fakeplayer.admin:
+    description: Permission to manage fake players
+    default: op
 

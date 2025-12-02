@@ -2,9 +2,11 @@ package com.fakeplayer.core;
 
 import com.fakeplayer.ui.TabUi;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class FakeManager {
     private final JavaPlugin plugin;
@@ -39,10 +41,15 @@ public class FakeManager {
         fakePlayers.clear();
     }
 
-    public void addFakePlayer(String name) {
-        if (fakePlayers.size() >= maxFakePlayers) return;
+    // Thêm 1 fake player đảm bảo không trùng tên (case-insensitive) với real hoặc fake
+    public boolean addFakePlayer(String name) {
+        if (fakePlayers.size() >= maxFakePlayers) return false;
+        String lower = name.toLowerCase();
+        Set<String> reservedLower = buildReservedLower();
+        if (reservedLower.contains(lower)) return false;
         fakePlayers.add(name);
         if (tabUi != null) tabUi.updateAll();
+        return true;
     }
 
     public void removeFakePlayer(String name) {
@@ -57,10 +64,14 @@ public class FakeManager {
         return fakePlayers.size();
     }
 
+    // Thêm N fake player với tên unique (case-insensitive)
     public void addRandomFakePlayers(int count) {
-        for (int i = 0; i < count && fakePlayers.size() < maxFakePlayers; i++) {
-            String name = nameGenerator.generateRandomName();
-            fakePlayers.add(name);
+        Set<String> reservedLower = buildReservedLower();
+        int toAdd = Math.min(count, maxFakePlayers - fakePlayers.size());
+        for (int i = 0; i < toAdd; i++) {
+            String unique = nameGenerator.generateUniqueName(reservedLower);
+            fakePlayers.add(unique);
+            reservedLower.add(unique.toLowerCase());
         }
         if (tabUi != null) tabUi.updateAll();
     }
@@ -72,16 +83,32 @@ public class FakeManager {
 
     private void rotateFakePlayers() {
         if (fakePlayers.isEmpty()) return;
-        Set<String> oldNames = new HashSet<>(fakePlayers);
-        fakePlayers.clear();
-        for (String ignored : oldNames) {
-            fakePlayers.add(nameGenerator.generateRandomName());
+        int target = fakePlayers.size();
+        Set<String> reservedLower = buildReservedLower();
+        // Loại bỏ các tên cũ khỏi reservedLower trước khi tạo mới
+        for (String old : fakePlayers) reservedLower.remove(old.toLowerCase());
+
+        Set<String> newNames = new HashSet<>();
+        while (newNames.size() < target) {
+            String cand = nameGenerator.generateUniqueName(reservedLower);
+            newNames.add(cand);
+            reservedLower.add(cand.toLowerCase());
         }
+        fakePlayers.clear();
+        fakePlayers.addAll(newNames);
         if (tabUi != null) tabUi.updateAll();
     }
 
     public boolean isFakePlayer(String name) {
-        return fakePlayers.contains(name);
+        return fakePlayers.stream().anyMatch(n -> n.equalsIgnoreCase(name));
+    }
+
+    private Set<String> buildReservedLower() {
+        Set<String> reserved = fakePlayers.stream().map(String::toLowerCase).collect(Collectors.toSet());
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            reserved.add(p.getName().toLowerCase());
+        }
+        return reserved;
     }
 }
 

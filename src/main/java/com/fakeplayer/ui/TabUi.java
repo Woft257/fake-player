@@ -59,9 +59,13 @@ public class TabUi {
         }
     }
 
+    public void clearViewer(java.util.UUID viewerId) {
+        viewerShown.remove(viewerId);
+    }
+
     private void sendAdd(Player viewer, Collection<String> names) {
         PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.PLAYER_INFO);
-        packet.getPlayerInfoActions().write(0, EnumWrappers.PlayerInfoAction.ADD_PLAYER);
+        packet.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.ADD_PLAYER);
 
         List<PlayerInfoData> list = names.stream().map(name -> {
             UUID uuid = stableUuid(name);
@@ -80,7 +84,7 @@ public class TabUi {
 
     private void sendRemove(Player viewer, Collection<String> names) {
         PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.PLAYER_INFO);
-        packet.getPlayerInfoActions().write(0, EnumWrappers.PlayerInfoAction.REMOVE_PLAYER);
+        packet.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.REMOVE_PLAYER);
 
         List<PlayerInfoData> list = names.stream().map(name -> {
             UUID uuid = stableUuid(name);
