@@ -44,6 +44,16 @@ public class FakePlayerPlugin extends JavaPlugin implements Listener {
         this.fakeManager.setTabUi(tabUi);
         this.fakeManager.start();
 
+        // Register PlaceholderAPI expansion (if present)
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            try {
+                new com.fakeplayer.papi.FakePlayerExpansion(this.fakeManager, this).register();
+                getLogger().info("PlaceholderAPI expansion registered: %fakeplayer_*%");
+            } catch (Throwable t) {
+                getLogger().warning("Failed to register PlaceholderAPI expansion: " + t.getMessage());
+            }
+        }
+
         Bukkit.getPluginManager().registerEvents(this, this);
         Bukkit.getPluginManager().registerEvents(new com.fakeplayer.ping.PingListener(fakeManager, this), this);
         Bukkit.getPluginManager().registerEvents(new com.fakeplayer.ping.ServerPingListener(fakeManager), this);
