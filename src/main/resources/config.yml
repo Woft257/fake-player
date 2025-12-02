@@ -1,0 +1,12 @@
+# FakePlayer Plugin Configuration
+
+# Số lượng fake player tối đa
+max-fake-players: 50
+
+# Khoảng thời gian để rotate tên fake player (tính bằng giây)
+# Mặc định: 300 giây (5 phút)
+rotate-interval: 300
+
+# Hiển thị debug messages
+debug: false
+
