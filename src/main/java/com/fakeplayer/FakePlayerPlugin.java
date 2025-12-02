@@ -6,6 +6,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.fakeplayer.core.FakeManager;
@@ -21,23 +22,37 @@ public class FakePlayerPlugin extends JavaPlugin implements Listener {
         return instance;
     }
 
+    public FakeManager getFakeManager() {
+        return fakeManager;
+    }
+
     @Override
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
 
-        this.fakeManager = new FakeManager(this);
-        this.fakeManager.start();
+        // Yêu cầu ProtocolLib để thêm player vào tab list
+        Plugin protocolLib = Bukkit.getPluginManager().getPlugin("ProtocolLib");
+        if (protocolLib == null || !protocolLib.isEnabled()) {
+            getLogger().severe("ProtocolLib chưa được cài đặt! Vui lòng cài ProtocolLib để FakePlayer hoạt động.");
+            Bukkit.getPluginManager().disablePlugin(this);
+            return;
+        }
 
+        this.fakeManager = new FakeManager(this);
         this.tabUi = new TabUi(this, fakeManager);
+        this.fakeManager.setTabUi(tabUi);
+        this.fakeManager.start();
 
         Bukkit.getPluginManager().registerEvents(this, this);
         Bukkit.getPluginManager().registerEvents(new com.fakeplayer.ping.PingListener(fakeManager, this), this);
+        Bukkit.getPluginManager().registerEvents(new com.fakeplayer.ping.ServerPingListener(fakeManager), this);
 
-        getCommand("fakeplayer").setExecutor(new FakePlayerCommand(fakeManager, this));
-        getCommand("fakeplayer").setTabCompleter(new FakePlayerCommand(fakeManager, this));
+        FakePlayerCommand command = new FakePlayerCommand(fakeManager, this);
+        getCommand("fakeplayer").setExecutor(command);
+        getCommand("fakeplayer").setTabCompleter(command);
 
-        // Update tab for all online players on reload
+        // Đồng bộ tab list cho tất cả người chơi đang online (reload plugin)
         for (Player p : Bukkit.getOnlinePlayers()) {
             tabUi.updateFor(p);
         }

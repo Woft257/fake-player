@@ -1,7 +1,7 @@
 package com.fakeplayer.core;
 
+import com.fakeplayer.ui.TabUi;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
@@ -10,10 +10,10 @@ public class FakeManager {
     private final JavaPlugin plugin;
     private final Set<String> fakePlayers = Collections.synchronizedSet(new HashSet<>());
     private final NameGenerator nameGenerator;
-    private int updateTaskId = -1;
     private int rotateTaskId = -1;
     private final int maxFakePlayers;
     private final int rotateInterval;
+    private TabUi tabUi;
 
     public FakeManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -22,32 +22,31 @@ public class FakeManager {
         this.rotateInterval = plugin.getConfig().getInt("rotate-interval", 300); // 5 minutes default
     }
 
-    public void start() {
-        // Task to rotate fake player names every X seconds
-        rotateTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
-            if (!fakePlayers.isEmpty()) {
-                rotateFakePlayers();
-            }
-        }, rotateInterval * 20L, rotateInterval * 20L);
+    public void setTabUi(TabUi tabUi) {
+        this.tabUi = tabUi;
+    }
 
+    public void start() {
+        if (rotateInterval > 0) {
+            rotateTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::rotateFakePlayers,
+                    rotateInterval * 20L, rotateInterval * 20L);
+        }
         plugin.getLogger().info("FakeManager started with " + maxFakePlayers + " max fake players");
     }
 
     public void stop() {
-        if (updateTaskId != -1) Bukkit.getScheduler().cancelTask(updateTaskId);
         if (rotateTaskId != -1) Bukkit.getScheduler().cancelTask(rotateTaskId);
         fakePlayers.clear();
     }
 
     public void addFakePlayer(String name) {
-        if (fakePlayers.size() >= maxFakePlayers) {
-            return;
-        }
+        if (fakePlayers.size() >= maxFakePlayers) return;
         fakePlayers.add(name);
+        if (tabUi != null) tabUi.updateAll();
     }
 
     public void removeFakePlayer(String name) {
-        fakePlayers.remove(name);
+        if (fakePlayers.remove(name) && tabUi != null) tabUi.updateAll();
     }
 
     public Set<String> getFakePlayers() {
@@ -63,26 +62,22 @@ public class FakeManager {
             String name = nameGenerator.generateRandomName();
             fakePlayers.add(name);
         }
+        if (tabUi != null) tabUi.updateAll();
     }
 
     public void clearAllFakePlayers() {
         fakePlayers.clear();
+        if (tabUi != null) tabUi.updateAll();
     }
 
     private void rotateFakePlayers() {
+        if (fakePlayers.isEmpty()) return;
         Set<String> oldNames = new HashSet<>(fakePlayers);
         fakePlayers.clear();
-        
         for (String ignored : oldNames) {
-            String newName = nameGenerator.generateRandomName();
-            fakePlayers.add(newName);
+            fakePlayers.add(nameGenerator.generateRandomName());
         }
-
-        // Update tab for all players
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            com.fakeplayer.FakePlayerPlugin.getInstance().getServer().getPluginManager()
-                    .callEvent(new org.bukkit.event.player.PlayerJoinEvent(p, ""));
-        }
+        if (tabUi != null) tabUi.updateAll();
     }
 
     public boolean isFakePlayer(String name) {

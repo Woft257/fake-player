@@ -5,10 +5,11 @@ description: Plugin fake player cho Minecraft Paper 1.18.2
 authors:
   - YourName
 api-version: 1.18
+softdepend: [ProtocolLib]
 
 commands:
   fakeplayer:
     description: Quản lý fake player
-    usage: /fakeplayer <add|remove|list|reload>
+    usage: /fakeplayer <add|remove|list|clear|reload>
     aliases: [fp]
 
